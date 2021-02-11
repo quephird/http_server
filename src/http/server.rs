@@ -1,3 +1,4 @@
+use std::io::Read;
 use std::net::{SocketAddrV4, TcpListener};
 
 
@@ -18,15 +19,24 @@ impl Server {
 
         let listener = TcpListener::bind(socket).unwrap();
         loop {
-            let res = listener.accept();
-
-            match res {
+            match listener.accept() {
+                Ok((mut stream, _address)) => {
+                    // We choose 1024 below just to be large-ish.
+                    // Ideally, we would need to handle arbitrary
+                    // lengths of requests.
+                    let mut buffer = [0; 1024];
+                    match stream.read(&mut buffer) {
+                        Ok(_) => {
+                            println!("Received a request: {}", String::from_utf8_lossy(&buffer));
+                        },
+                        Err(e) => {
+                            println!("Failed to read from stream due to error: {}", e)
+                        },
+                    }
+                },
                 Err(e) => {
                     println!("Failed to establish connection due to error: {}", e)
                 },
-                Ok((stream, address)) => {
-                    println!("Received connection from {}!!!", address);
-                }
             }
         }
     }
