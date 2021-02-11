@@ -18,7 +18,16 @@ impl Server {
 
         let listener = TcpListener::bind(socket).unwrap();
         loop {
+            let res = listener.accept();
 
+            match res {
+                Err(e) => {
+                    println!("Failed to establish connection due to error: {}", e)
+                },
+                Ok((stream, address)) => {
+                    println!("Received connection from {}!!!", address);
+                }
+            }
         }
     }
 }
