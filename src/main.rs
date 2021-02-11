@@ -12,11 +12,31 @@ impl HttpServer {
     }
 
     fn run(self) -> () {
-        println!("Running...");
+        println!("Listening on port {}...", self.port);
         loop {
 
         }
     }
+}
+
+enum Method {
+    GET,
+    DELETE,
+    POST,
+    PUT,
+    HEAD,
+    CONNECT,
+    OPTIONS,
+    TRACE,
+    PATCH,
+}
+
+struct Request {
+    method: Method,
+    path: String,
+    query_string: Option<String>,
+    headers: Vec<String>,
+    body: String,
 }
 
 fn main() {
@@ -25,7 +45,7 @@ fn main() {
     let ip_address = String::from(components[0]);
     let port = String::from(components[1]);
 
-    println!("Starting new HTTP 1.1 server at address {} and port {}...", ip_address, port);
+    println!("Starting new HTTP 1.1 server...");
     let server = HttpServer::new(ip_address, port);
     server.run();
 }
