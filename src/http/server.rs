@@ -1,18 +1,22 @@
+use std::net::{SocketAddrV4, TcpListener};
+
+
 pub struct Server {
-    ip_address: String,
-    port: String,
+    address: String,
 }
 
 impl Server {
-    pub fn new(ip_address: String, port: String) -> Self {
+    pub fn new(address: String) -> Self {
         Self {
-            ip_address,
-            port,
+            address,
         }
     }
 
     pub fn run(self) -> () {
-        println!("Listening on port {}...", self.port);
+        let socket = self.address.parse::<SocketAddrV4>().unwrap();
+        println!("Listening on port {}...", socket.port());
+
+        let listener = TcpListener::bind(socket).unwrap();
         loop {
 
         }
