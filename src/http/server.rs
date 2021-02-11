@@ -1,6 +1,8 @@
+use std::convert::TryFrom;
 use std::io::Read;
 use std::net::{SocketAddrV4, TcpListener};
 
+use super::request::Request;
 
 pub struct Server {
     address: String,
@@ -27,7 +29,10 @@ impl Server {
                     let mut buffer = [0; 1024];
                     match stream.read(&mut buffer) {
                         Ok(_) => {
-                            println!("Received a request: {}", String::from_utf8_lossy(&buffer));
+                            match Request::try_from(&buffer[..]) {
+                                Ok(request) => println!("Received a request: {:?}", request),
+                                Err(e) => println!("Failed to parse request: {}", e),
+                            }
                         },
                         Err(e) => {
                             println!("Failed to read from stream due to error: {}", e)
