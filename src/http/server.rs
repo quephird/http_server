@@ -1,6 +1,7 @@
 use std::convert::TryFrom;
 use std::io::Read;
-use std::net::{SocketAddrV4, TcpListener};
+use std::net::SocketAddrV4;
+use std::net::TcpListener;
 
 use super::request::Request;
 
