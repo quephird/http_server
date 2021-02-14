@@ -16,20 +16,6 @@ pub struct Request {
 }        
 
 impl Request {
-    fn parse_method(first_token: &str) -> Result<Method, ParseError> {
-        match first_token {
-            "GET" => Ok(Method::GET),
-            "DELETE"=> Ok(Method::DELETE),
-            "POST"=> Ok(Method::POST),
-            "PUT"=> Ok(Method::PUT),
-            "HEAD"=> Ok(Method::HEAD),
-            "CONNECT"=> Ok(Method::CONNECT),
-            "OPTIONS"=> Ok(Method::OPTIONS),
-            "TRACE"=> Ok(Method::TRACE),
-            "PATCH"=> Ok(Method::PATCH),
-            _ => Err(ParseError::InvalidHTTPMethod),
-        }
-    }
     fn parse_path_and_query_string(second_token: &str) -> (String, Option<String>) {
         let tokens: Vec<&str> = second_token.split("?").collect();
         return if tokens.len() < 2 {
@@ -38,6 +24,7 @@ impl Request {
             (tokens[0].to_string(), Some(tokens[1].to_string()))
         };
     }
+
     fn parse_http_version(third_token: &str) -> Result<f32, ParseError> {
         if !third_token.starts_with("HTTP/") || third_token.len() < 6 {
             return Err(ParseError::InvalidRequest);
@@ -54,6 +41,7 @@ impl Request {
                 }
         }
     }
+
     fn parse_first_line(first_request_line: &str) -> Result<(Method, String, Option<String>, f32), ParseError> {
         let tokens: Vec<&str> = first_request_line.split_ascii_whitespace().collect();
 
@@ -64,16 +52,14 @@ impl Request {
             return Err(ParseError::InvalidRequest);
         }
 
-        let maybe_method = Self::parse_method(tokens[0]);
-        if maybe_method.is_err() {
-            return Err(maybe_method.unwrap_err())
-        }
+        // This takes advantage of the FromStr trait for Method
+        let method = tokens[0].parse()?;
 
         let (path, query_string) = Self::parse_path_and_query_string(tokens[1]);
 
         let http_version = Self::parse_http_version(tokens[2]).unwrap();
 
-        Ok((maybe_method.unwrap(), path.to_string(), query_string, http_version))
+        Ok((method, path.to_string(), query_string, http_version))
     }
 }
 
@@ -90,7 +76,7 @@ impl TryFrom<&[u8]> for Request {
                     return Err(maybe_first_line.unwrap_err());
                 }
 
-                let (method, path, query_string, http_version) = maybe_first_line.unwrap();
+                let (method, path, query_string, _http_version) = maybe_first_line.unwrap();
                 Ok(
                     Self {
                         method: method,
