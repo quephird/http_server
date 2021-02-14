@@ -5,23 +5,24 @@ use std::fmt::Formatter;
 use std::str;
 
 use super::method::Method;
+use super::query_parameters::QueryParameters;
 
 #[derive(Debug)]
-pub struct Request {
+pub struct Request<'qp> {
     method: Method,
     path: String,
-    query_string: Option<String>,
+    query_params: Option<QueryParameters<'qp>>,
     headers: Vec<String>,
     body: Option<String>,
 }        
 
-impl Request {
-    fn parse_path_and_query_string(second_token: &str) -> (String, Option<String>) {
+impl<'qp> Request<'qp> {
+    fn parse_path_and_query_string(second_token: &str) -> (String, Option<&str>) {
         let tokens: Vec<&str> = second_token.split("?").collect();
         return if tokens.len() < 2 {
             (tokens[0].to_string(), None)
         } else {
-            (tokens[0].to_string(), Some(tokens[1].to_string()))
+            (tokens[0].to_string(), Some(tokens[1]))
         };
     }
 
@@ -42,7 +43,7 @@ impl Request {
         }
     }
 
-    fn parse_first_line(first_request_line: &str) -> Result<(Method, String, Option<String>, f32), ParseError> {
+    fn parse_first_line(first_request_line: &'qp str) -> Result<(Method, String, Option<QueryParameters<'qp>>, f32), ParseError> {
         let tokens: Vec<&str> = first_request_line.split_ascii_whitespace().collect();
 
         // The first line should _always_ have three components like:
@@ -55,18 +56,24 @@ impl Request {
         // This takes advantage of the FromStr trait for Method
         let method = tokens[0].parse()?;
 
-        let (path, query_string) = Self::parse_path_and_query_string(tokens[1]);
+        let (path, maybe_query_string) = Self::parse_path_and_query_string(tokens[1]);
+
+        let mut query_params: Option<QueryParameters<'qp>> = None;
+        if maybe_query_string.is_some() {
+            // This takes advantage of the From trait for QueryParameters
+            query_params = Some(QueryParameters::from(maybe_query_string.unwrap()));
+        }
 
         let http_version = Self::parse_http_version(tokens[2]).unwrap();
 
-        Ok((method, path.to_string(), query_string, http_version))
+        Ok((method, path.to_string(), query_params, http_version))
     }
 }
 
-impl TryFrom<&[u8]> for Request {
+impl<'qp> TryFrom<&'qp [u8]> for Request<'qp> {
     type Error = ParseError;
 
-    fn try_from(buffer: &[u8]) -> Result<Self, Self::Error> {
+    fn try_from(buffer: &'qp [u8]) -> Result<Self, Self::Error> {
         let result = str::from_utf8(buffer);
         match result {
             Ok(request_str) => {
@@ -76,12 +83,12 @@ impl TryFrom<&[u8]> for Request {
                     return Err(maybe_first_line.unwrap_err());
                 }
 
-                let (method, path, query_string, _http_version) = maybe_first_line.unwrap();
+                let (method, path, query_params, _http_version) = maybe_first_line.unwrap();
                 Ok(
                     Self {
                         method: method,
                         path: path.to_string(),
-                        query_string: query_string,
+                        query_params: query_params,
                         headers: vec![],
                         body: None,
                     }
