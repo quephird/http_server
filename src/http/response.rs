@@ -26,7 +26,9 @@ impl Response {
         }
     }
 
-    pub fn send(&self, stream: &mut TcpStream) -> IoResult<()> {
+    // ACHTUNG! This function requires that the `stream` parameter
+    // implements the `Write` trait.
+    pub fn send(&self, stream: &mut dyn Write) -> IoResult<()> {
         let body_string = match &self.body {
             Some(body) => body,
             None => "",
