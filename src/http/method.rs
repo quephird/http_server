@@ -1,5 +1,5 @@
 use std::str::FromStr;
-use super::request::ParseError;
+use super::parse_error::ParseError;
 
 #[derive(Debug)]
 pub enum Method {

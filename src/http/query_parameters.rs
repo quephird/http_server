@@ -17,7 +17,6 @@ impl<'qp> QueryParameters<'qp> {
     }
 }
 
-
 impl<'qp> From<&'qp str> for QueryParameters<'qp> {
     fn from(query_string: &'qp str) -> Self {
         let mut params = HashMap::new();
