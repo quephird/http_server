@@ -1,3 +1,4 @@
+pub mod handler;
 pub mod method;
 pub mod parse_error;
 pub mod query_parameters;

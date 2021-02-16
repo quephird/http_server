@@ -3,9 +3,8 @@ use std::io::Read;
 use std::net::SocketAddrV4;
 use std::net::TcpListener;
 
+use super::handler::Handler;
 use super::request::Request;
-use super::response::Response;
-use super::status_code::StatusCode;
 
 pub struct Server {
     address: String,
@@ -18,26 +17,7 @@ impl Server {
         }
     }
 
-    fn handle_request(buffer: &mut [u8; 1024]) -> Response {
-        match Request::try_from(&buffer[..]) {
-            Ok(request) => {
-                println!("Received a request: {:?}", request);
-                Response {
-                    status: StatusCode::Ok,
-                    body: Some("Hello, Danielle!!!".to_string()),
-                }
-            }
-            Err(e) => {
-                println!("Failed to parse request: {}", e);
-                Response {
-                    status: StatusCode::BadRequest,
-                    body: Some("I am sorry, Danielle!!!".to_string()),
-                }
-            }
-        }
-    }
-
-    pub fn run(self) -> () {
+    pub fn run(self, handler: &mut impl Handler) -> () {
         let socket = self.address.parse::<SocketAddrV4>().unwrap();
         println!("Listening on port {}...", socket.port());
 
@@ -51,7 +31,11 @@ impl Server {
                     let mut buffer = [0; 1024];
                     match stream.read(&mut buffer) {
                         Ok(_) => {
-                            let response = Self::handle_request(&mut buffer);
+                            let response = match Request::try_from(&buffer[..]) {
+                                Ok(request) => handler.handle_success(&request),
+                                Err(error) => handler.handle_failure(&error),
+                            };
+
                             if let Err(e) = response.send(&mut stream) {
                                 println!("Failed to send respose to client: {}", e);
                             }

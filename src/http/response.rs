@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use std::io::Result as IoResult;
 use std::io::Write;
-use std::net::TcpStream;
 
 use super::status_code::StatusCode;
 
@@ -14,7 +13,6 @@ pub struct Response {
 
 impl Response {
     pub fn new(
-        http_version: String,
         status: StatusCode,
         // headers: Hashmap<String, String>,
         body: Option<String>,
