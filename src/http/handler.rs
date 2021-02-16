@@ -1,3 +1,5 @@
+use std::fs;
+
 use super::method::Method;
 use super::parse_error::ParseError;
 use super::request::Request;
@@ -10,7 +12,22 @@ pub trait Handler {
     fn handle_failure(&mut self, error: &ParseError) -> Response;
 }
 
-pub struct HandlerImpl;
+pub struct HandlerImpl {
+    pub public_path: String,
+}
+
+impl HandlerImpl {
+    pub fn new(public_path: String) -> Self {
+        Self {
+            public_path,
+        }
+    }
+
+    fn read_file(&self, relative_path: &str) -> Option<String> {
+        let absolute_path = format!("{}/{}", self.public_path, relative_path);
+        fs::read_to_string(absolute_path).ok()
+    }
+}
 
 impl Handler for HandlerImpl {
     fn handle_success(&mut self, request: &Request) -> Response {
@@ -21,19 +38,11 @@ impl Handler for HandlerImpl {
                 match request.path {
                     "/" => Response {
                         status: StatusCode::Ok,
-                        body: Some(
-                            "<html>
-                            <body>Welcome to the root, Danielle</body>
-                            </html".to_string()
-                        ),
+                        body: self.read_file("index.html"),
                     },
                     _ => Response {
                         status: StatusCode::NotFound,
-                        body: Some(
-                            "<html>
-                            <body>;_; Path not found</body>
-                            </html".to_string()
-                        ),
+                        body: self.read_file("404.html"),
                     },
                 }
             _ => 
